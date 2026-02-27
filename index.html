@@ -32,6 +32,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
     <script>
         tailwind.config = {
             theme: {
@@ -145,27 +146,66 @@
 
     <div class="max-w-md mx-auto px-4 py-6">
         <!-- Header -->
-        <header class="flex justify-between items-center mb-10 pt-4 animate-fade-in">
+        <header class="flex justify-between items-center mb-6 pt-4 animate-fade-in">
             <div>
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight font-display">Fluxo<span
                         class="text-indigo-600">Real</span></h1>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Armazenamento Local Ativo
-                    </p>
+                    <p id="auth-status" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Local</p>
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="exportData()" title="Backup"
-                    class="p-2.5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
-                    <i data-lucide="download" class="w-5 h-5 text-slate-600"></i>
+            <div class="flex gap-2">
+                <button id="btn-login" onclick="toggleLoginModal()"
+                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95">
+                    <i data-lucide="user" class="w-3 h-3"></i> Login
                 </button>
-                <button onclick="resetData()" title="Limpar"
-                    class="p-2.5 bg-red-50 rounded-2xl border border-red-100 hover:bg-red-100 transition-colors">
-                    <i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="exportData()" title="Backup"
+                        class="p-2.5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+                        <i data-lucide="download" class="w-5 h-5 text-slate-600"></i>
+                    </button>
+                    <button onclick="resetData()" title="Limpar"
+                        class="p-2.5 bg-red-50 rounded-2xl border border-red-100 hover:bg-red-100 transition-colors">
+                        <i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>
+                    </button>
+                </div>
             </div>
         </header>
+
+        <!-- Seletor de Mês/Ano -->
+        <div class="glass-card p-4 mb-6 flex gap-4 items-center justify-between animate-fade-in"
+            style="animation-delay: 0.05s">
+            <div class="flex gap-2 items-center flex-1">
+                <div class="p-2 bg-indigo-50 rounded-xl">
+                    <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+                </div>
+                <select id="select-month" onchange="updatePeriod()"
+                    class="bg-transparent border-none text-xs font-black text-slate-700 focus:ring-0 uppercase tracking-tighter cursor-pointer">
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+                <select id="select-year" onchange="updatePeriod()"
+                    class="bg-transparent border-none text-xs font-black text-slate-700 focus:ring-0 cursor-pointer">
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            <div class="w-px h-6 bg-slate-100"></div>
+            <button onclick="goToToday()"
+                class="text-[10px] font-black text-indigo-600 uppercase tracking-widest px-3 py-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-all">Hoje</button>
+        </div>
 
         <!-- Resumo de Saldo -->
         <div class="glass-card p-8 mb-6 border-t-8 border-indigo-600 shadow-2xl animate-fade-in"
@@ -269,56 +309,223 @@
         </div>
     </div>
 
-    <nav
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/50 rounded-3xl flex justify-around items-center p-4 z-50 shadow-2xl">
-        <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="flex flex-col items-center gap-1 group">
-            <div class="p-2 bg-indigo-50 rounded-xl group-hover:bg-indigo-100 transition-colors">
-                <i data-lucide="layout-dashboard" class="w-5 h-5 text-indigo-600"></i>
-            </div>
-            <span class="text-indigo-600 text-[10px] font-black uppercase tracking-tighter">Resumo</span>
-        </button>
-        <div class="w-px h-8 bg-slate-100"></div>
-        <button onclick="addRow('leisure')" class="flex flex-col items-center gap-1 group">
-            <div class="p-2 bg-slate-50 rounded-xl group-hover:bg-slate-100 transition-colors">
-                <i data-lucide="zap" class="w-5 h-5 text-slate-400"></i>
-            </div>
-            <span
-                class="text-slate-400 text-[10px] font-black uppercase tracking-tighter group-hover:text-slate-600 transition-colors">+
-                Gasto Rápido</span>
-        </button>
     </nav>
 
-    <script>
-        let currentPeriod = 'q1';
-        let chartInstance;
+    <!-- Login Modal -->
+    <div id="login-modal"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden items-center justify-center p-6 transition-all">
+        <div class="glass-card p-8 w-full max-w-sm shadow-2xl relative animate-fade-in">
+            <button onclick="toggleLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight font-display mb-2">Entrar no <span
+                    class="text-indigo-600">Fluxo</span></h2>
+            <p class="text-xs text-slate-500 mb-8 font-medium">Sincronize seus dados em tempo real entre dispositivos.
+            </p>
 
-        let state = JSON.parse(localStorage.getItem('fluxo_real_db')) || {
-            income: [{ desc: 'Salário', q1: 0, q2: 0 }],
-            cards: [{ name: 'Cartão Principal', q1_items: [], q2_items: [] }],
-            fixed: [{ desc: 'Aluguel', q1: 0, q2: 0 }],
-            invest: [],
-            leisure: []
+            <div class="space-y-4">
+                <div>
+                    <label
+                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">E-mail</label>
+                    <input type="email" id="login-email" placeholder="seu@email.com"
+                        class="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20">
+                </div>
+                <div>
+                    <label
+                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Senha</label>
+                    <input type="password" id="login-password" placeholder="••••••••"
+                        class="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20">
+                </div>
+                <button onclick="handleAuth()" id="btn-auth-submit"
+                    class="w-full btn-primary py-4 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all mt-4">
+                    Conectar Conta
+                </button>
+                <p class="text-[9px] text-center text-slate-400 mt-4 leading-relaxed">Nota: O login compartilhado
+                    utiliza o Firebase para sincronização instantânea de dados.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // CONFIGURAÇÃO DO FIREBASE (O usuário deve preencher com seus dados do Console do Firebase)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAv0YdaJfdXzh1A0AjyOAO_XPdlAn3bADg",
+            authDomain: "fluxo-real-10a07.firebaseapp.com",
+            projectId: "fluxo-real-10a07",
+            storageBucket: "fluxo-real-10a07.firebasestorage.app",
+            messagingSenderId: "297335341036",
+            appId: "1:297335341036:web:9917879a63b2b8adf80ac9",
+            measurementId: "G-1JYPRD06YY"
         };
 
-        function silentSave() {
-            localStorage.setItem('fluxo_real_db', JSON.stringify(state));
+        let db = JSON.parse(localStorage.getItem('fluxo_real_v2')) || { user: null, data: {} };
+        let now = new Date();
+        let currentPeriodKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        let currentPeriod = 'q1';
+        let chartInstance;
+        let auth, firestore;
+
+        // Migração de dados antigos
+        const oldState = JSON.parse(localStorage.getItem('fluxo_real_db'));
+        if (oldState && Object.keys(db.data).length === 0) {
+            db.data[currentPeriodKey] = oldState;
+            localStorage.removeItem('fluxo_real_db');
+            localStorage.setItem('fluxo_real_v2', JSON.stringify(db));
+        }
+
+        // Inicializa Firebase
+        if (firebaseConfig.apiKey !== "AIzaSy...") {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            firestore = getFirestore(app);
+            setupAuthListener();
+        }
+
+        // Exposing functions to global scope for HTML onclicks
+        window.getPeriodData = () => {
+            if (!db.data[currentPeriodKey]) {
+                db.data[currentPeriodKey] = {
+                    income: [{ desc: 'Salário', q1: 0, q2: 0 }],
+                    cards: [{ name: 'Cartão Principal', q1_items: [], q2_items: [] }],
+                    fixed: [{ desc: 'Aluguel', q1: 0, q2: 0 }],
+                    invest: [],
+                    leisure: []
+                };
+            }
+            return db.data[currentPeriodKey];
+        };
+
+        window.saveDB = (upload = true) => {
+            localStorage.setItem('fluxo_real_v2', JSON.stringify(db));
+            if (upload && auth && auth.currentUser) {
+                setDoc(doc(firestore, "users", auth.currentUser.uid), {
+                    data: db.data,
+                    lastUpdate: new Date().toISOString()
+                }, { merge: true });
+            }
             calculate();
+        };
+
+        window.updatePeriod = () => {
+            const m = document.getElementById('select-month').value;
+            const y = document.getElementById('select-year').value;
+            currentPeriodKey = `${y}-${m}`;
+            fullRender();
+        };
+
+        window.goToToday = () => {
+            const d = new Date();
+            document.getElementById('select-month').value = (d.getMonth() + 1).toString().padStart(2, '0');
+            document.getElementById('select-year').value = d.getFullYear();
+            updatePeriod();
+        };
+
+        window.toggleLoginModal = () => {
+            const modal = document.getElementById('login-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        };
+
+        window.handleAuth = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            const btn = document.getElementById('btn-auth-submit');
+
+            if (!auth) return alert("Firebase não configurado.");
+            if (!email || !pass) return alert("Preencha todos os campos");
+
+            try {
+                btn.disabled = true;
+                btn.innerText = "Processando...";
+
+                try {
+                    // Tenta primeiro o login
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (e) {
+                    // Se o erro for que o usuário não existe, tenta criar a conta
+                    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+                        try {
+                            await createUserWithEmailAndPassword(auth, email, pass);
+                        } catch (signupErr) {
+                            throw signupErr; // Repassa o erro de cadastro
+                        }
+                    } else {
+                        throw e; // Repassa erro de senha incorreta ou outros
+                    }
+                }
+                toggleLoginModal();
+            } catch (error) {
+                console.error("Auth Error:", error.code, error.message);
+                let msg = "Erro na autenticação: " + error.message;
+
+                // Mapeamento de erros comuns do Firebase para Português
+                const errorMap = {
+                    'auth/wrong-password': "Senha incorreta. Verifique e tente novamente.",
+                    'auth/user-not-found': "Usuário não encontrado. Criando nova conta...",
+                    'auth/invalid-credential': "E-mail ou senha incorretos.",
+                    'auth/email-already-in-use': "Este e-mail já está em uso com outra senha.",
+                    'auth/invalid-email': "Formato de e-mail inválido.",
+                    'auth/weak-password': "A senha deve ter pelo menos 6 caracteres.",
+                    'auth/configuration-not-found': "O provedor 'E-mail/Senha' não está ativado no seu Console do Firebase.",
+                    'auth/operation-not-allowed': "Login por E-mail/Senha desativado no Firebase.",
+                    'auth/too-many-requests': "Muitas tentativas falhas. Tente novamente mais tarde."
+                };
+
+                if (errorMap[error.code]) {
+                    msg = errorMap[error.code];
+                }
+                alert(msg);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Conectar Conta";
+            }
+        };
+
+        window.handleSignOut = async () => { if (auth) await signOut(auth); };
+
+        function setupAuthListener() {
+            onAuthStateChanged(auth, user => {
+                const statusEl = document.getElementById('auth-status');
+                const btnLogin = document.getElementById('btn-login');
+                if (user) {
+                    db.user = { uid: user.uid, email: user.email };
+                    statusEl.innerText = "Sincronizado";
+                    btnLogin.innerHTML = `<i data-lucide="log-out" class="w-3 h-3"></i> Sair`;
+                    btnLogin.onclick = handleSignOut;
+                    onSnapshot(doc(firestore, "users", user.uid), (docSnap) => {
+                        if (docSnap.exists()) {
+                            db.data = docSnap.data().data;
+                            saveDB(false);
+                            render();
+                        }
+                    });
+                } else {
+                    db.user = null;
+                    statusEl.innerText = "Local";
+                    btnLogin.innerHTML = `<i data-lucide="user" class="w-3 h-3"></i> Login`;
+                    btnLogin.onclick = toggleLoginModal;
+                }
+                lucide.createIcons();
+            });
         }
 
-        function fullRender() {
-            localStorage.setItem('fluxo_real_db', JSON.stringify(state));
-            render();
-        }
-
-        function setPeriod(p) {
+        window.setPeriod = (p) => {
             currentPeriod = p;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${p}`).classList.add('active');
             fullRender();
-        }
+        };
 
-        function render() {
+        window.render = () => {
+            const state = getPeriodData();
             document.getElementById('label-periodo').innerText = currentPeriod === 'q1' ? 'DIA 15' : 'DIA 30';
+            const [year, month] = currentPeriodKey.split('-');
+            document.getElementById('select-month').value = month;
+            document.getElementById('select-year').value = year;
 
             const catConfig = [
                 { id: 'income', label: 'Receitas', color: 'green-500', icon: 'trending-up' },
@@ -336,32 +543,25 @@
                 div.innerHTML = `
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-2">
-                        <div class="p-2 bg-${c.color}/10 rounded-lg">
-                            <i data-lucide="${c.icon}" class="w-4 h-4 text-${c.color}"></i>
-                        </div>
+                        <div class="p-2 bg-${c.color}/10 rounded-lg"><i data-lucide="${c.icon}" class="w-4 h-4 text-${c.color}"></i></div>
                         <span class="text-xs font-black text-slate-700 uppercase tracking-widest">${c.label}</span>
                     </div>
-                    <button onclick="addRow('${c.id}')" class="text-indigo-600 hover:scale-125 transition-transform">
-                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                    </button>
+                    <button onclick="addRow('${c.id}')" class="text-indigo-600 hover:scale-125 transition-transform"><i data-lucide="plus-circle" class="w-5 h-5"></i></button>
                 </div>
                 <div id="list-${c.id}" class="space-y-3">
                     ${state[c.id].map((item, i) => `
                         <div class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white/20 shadow-sm group">
-                            <input type="text" value="${item.desc}" oninput="state.${c.id}[${i}].desc=this.value; silentSave()" 
-                                class="flex-1 bg-transparent border-none p-0 text-sm text-slate-600 font-medium focus:ring-0 placeholder-slate-300" placeholder="Descrição">
+                            <input type="text" value="${item.desc}" oninput="getPeriodData().${c.id}[${i}].desc=this.value; saveDB()" 
+                                class="flex-1 bg-transparent border-none p-0 text-sm text-slate-600 font-medium focus:ring-0" placeholder="Descrição">
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] font-bold text-slate-300">R$</span>
-                                <input type="number" value="${item[currentPeriod]}" oninput="state.${c.id}[${i}].${currentPeriod}=parseFloat(this.value)||0; silentSave()"
+                                <input type="number" value="${item[currentPeriod]}" oninput="getPeriodData().${c.id}[${i}].${currentPeriod}=parseFloat(this.value)||0; saveDB()"
                                     class="w-20 bg-transparent border-none text-right font-black text-slate-900 p-0 text-sm focus:ring-0">
-                                <button onclick="state.${c.id}.splice(${i},1); fullRender()" class="text-slate-200 group-hover:text-red-400 transition-colors">
-                                    <i data-lucide="x" class="w-4 h-4"></i>
-                                </button>
+                                <button onclick="getPeriodData().${c.id}.splice(${i},1); fullRender()" class="text-slate-200 group-hover:text-red-400 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
                             </div>
                         </div>
                     `).join('')}
-                </div>
-            `;
+                </div>`;
                 catContainer.appendChild(div);
             });
 
@@ -376,70 +576,64 @@
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
                         <i data-lucide="credit-card" class="w-3.5 h-3.5 text-indigo-400"></i>
-                        <input type="text" value="${card.name}" oninput="state.cards[${ci}].name=this.value; silentSave()" 
-                            class="bg-transparent border-none font-bold text-xs p-0 focus:ring-0 text-slate-700 w-full placeholder-slate-300" placeholder="Nome do Cartão">
+                        <input type="text" value="${card.name}" oninput="getPeriodData().cards[${ci}].name=this.value; saveDB()" 
+                            class="bg-transparent border-none font-bold text-xs p-0 focus:ring-0 text-slate-700 w-full" placeholder="Nome do Cartão">
                     </div>
                     <span id="card-total-ui-${ci}" class="text-sm font-black text-indigo-600 font-display">${fmt(total)}</span>
                 </div>
                 <div class="space-y-2 mb-4">
                     ${items.map((it, ii) => `
                         <div class="flex justify-between items-center bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100 group">
-                            <input type="text" value="${it.desc}" oninput="state.cards[${ci}].${currentPeriod}_items[${ii}].desc=this.value; silentSave()"
-                                class="flex-1 border-none p-0 text-xs text-slate-500 font-medium focus:ring-0 placeholder-slate-300" placeholder="Item">
+                            <input type="text" value="${it.desc}" oninput="getPeriodData().cards[${ci}].${currentPeriod}_items[${ii}].desc=this.value; saveDB()"
+                                class="flex-1 border-none p-0 text-xs text-slate-500 font-medium focus:ring-0" placeholder="Item">
                             <div class="flex items-center gap-2">
                                 <span class="text-[9px] font-bold text-slate-300">R$</span>
-                                <input type="number" value="${it.val}" oninput="state.cards[${ci}].${currentPeriod}_items[${ii}].val=parseFloat(this.value)||0; updateCardUI(${ci}); silentSave()"
+                                <input type="number" value="${it.val}" oninput="getPeriodData().cards[${ci}].${currentPeriod}_items[${ii}].val=parseFloat(this.value)||0; updateCardUI(${ci}); saveDB()"
                                     class="w-16 border-none p-0 text-right font-black text-xs focus:ring-0 text-slate-800">
-                                <button onclick="state.cards[${ci}].${currentPeriod}_items.splice(${ii},1); fullRender()" class="text-slate-100 group-hover:text-red-300 transition-colors">
-                                    <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
-                                </button>
+                                <button onclick="getPeriodData().cards[${ci}].${currentPeriod}_items.splice(${ii},1); fullRender()" class="text-slate-100 group-hover:text-red-300 transition-colors"><i data-lucide="minus-circle" class="w-3.5 h-3.5"></i></button>
                             </div>
                         </div>
                     `).join('')}
                 </div>
                 <div class="flex justify-between items-center pt-2">
-                    <button onclick="state.cards[${ci}].${currentPeriod}_items.push({desc:'', val:0}); fullRender()" 
-                        class="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-700 transition-colors">
-                        <i data-lucide="plus" class="w-3 h-3"></i> Adicionar Lançamento
-                    </button>
-                    <button onclick="if(confirm('Remover cartão?')){state.cards.splice(${ci},1); fullRender()}" 
+                    <button onclick="getPeriodData().cards[${ci}].${currentPeriod}_items.push({desc:'', val:0}); fullRender()" 
+                        class="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-700 transition-colors"><i data-lucide="plus" class="w-3 h-3"></i> Adicionar Lançamento</button>
+                    <button onclick="if(confirm('Remover cartão?')){getPeriodData().cards.splice(${ci},1); fullRender()}" 
                         class="text-slate-300 hover:text-red-400 transition-colors text-[10px] uppercase font-bold tracking-tighter">Excluir</button>
-                </div>
-            `;
+                </div>`;
                 cardContainer.appendChild(div);
             });
-
             calculate();
             lucide.createIcons();
-        }
+        };
 
-        function updateCardUI(ci) {
+        window.fullRender = () => { saveDB(); render(); };
+
+        window.updateCardUI = (ci) => {
+            const state = getPeriodData();
             const items = state.cards[ci][`${currentPeriod}_items`] || [];
             const total = items.reduce((a, b) => a + b.val, 0);
             const el = document.getElementById(`card-total-ui-${ci}`);
             if (el) el.innerText = fmt(total);
-        }
+        };
 
-        function calculate() {
+        window.calculate = () => {
+            const state = getPeriodData();
             let tInc = 0, tFix = 0, tInv = 0, tLaz = 0, tCrd = 0;
             let catExpenses = [];
-            let groupMap = {}; // Mapa para agrupar itens de cartão por nome
+            let groupMap = {};
 
-            // Soma Categorias
             state.income.forEach(i => tInc += (i[currentPeriod] || 0));
             state.fixed.forEach(i => { tFix += i[currentPeriod]; if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
             state.invest.forEach(i => { tInv += i[currentPeriod]; if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
             state.leisure.forEach(i => { tLaz += i[currentPeriod]; if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
 
-            // Processa Cartões com agrupamento por nome de descrição
             state.cards.forEach(c => {
                 const items = c[`${currentPeriod}_items`] || [];
                 items.forEach(it => {
                     if (it.val > 0) {
                         const name = it.desc.trim().toLowerCase() || "sem nome";
-                        if (!groupMap[name]) {
-                            groupMap[name] = { originalName: it.desc.trim() || "Item sem nome", val: 0 };
-                        }
+                        if (!groupMap[name]) groupMap[name] = { originalName: it.desc.trim() || "Item sem nome", val: 0 };
                         groupMap[name].val += it.val;
                         tCrd += it.val;
                     }
@@ -449,7 +643,6 @@
             const totalExp = tFix + tInv + tLaz + tCrd;
             const bal = tInc - totalExp;
 
-            // Atualização de Painéis
             document.getElementById('main-balance').innerText = fmt(bal);
             document.getElementById('main-balance').style.color = bal < 0 ? '#ef4444' : '#1e293b';
             document.getElementById('total-inc').innerText = fmt(tInc);
@@ -457,61 +650,48 @@
             document.getElementById('card-total-val').innerText = fmt(tCrd);
             document.getElementById('card-total-count').innerText = `${state.cards.length} cartões`;
 
-            // Maior Gasto Geral (sem cartões)
             const topG = catExpenses.sort((a, b) => b.val - a.val)[0];
             document.getElementById('top-expense-desc').innerText = topG ? topG.desc : '---';
             document.getElementById('top-expense-val').innerText = topG ? fmt(topG.val) : 'R$ 0';
 
-            // Ranking Agrupado de Cartões
             const rankingArray = Object.values(groupMap).sort((a, b) => b.val - a.val).slice(0, 3);
             const rankList = document.getElementById('card-ranking-list');
-
             if (rankingArray.length > 0) {
                 rankList.innerHTML = rankingArray.map((it, idx) => `
                 <div class="flex justify-between items-center bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
-                    <div class="flex items-center gap-3">
-                        <span class="text-[10px] font-black text-slate-300">#${idx + 1}</span>
-                        <span class="text-[11px] font-bold text-slate-600 truncate max-w-[140px]">${it.originalName}</span>
-                    </div>
+                    <div class="flex items-center gap-3"><span class="text-[10px] font-black text-slate-300">#${idx + 1}</span><span class="text-[11px] font-bold text-slate-600 truncate max-w-[140px]">${it.originalName}</span></div>
                     <span class="text-xs font-black text-slate-800">${fmt(it.val)}</span>
-                </div>
-            `).join('');
-            } else {
-                rankList.innerHTML = '<p class="text-[10px] text-slate-400 italic text-center py-2">Sem gastos no cartão.</p>';
-            }
+                </div>`).join('');
+            } else { rankList.innerHTML = '<p class="text-[10px] text-slate-400 italic text-center py-2">Sem gastos no cartão.</p>'; }
 
             updateChart([tFix, tCrd, tInv, tLaz]);
-        }
+        };
 
-        function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-        function addRow(cat) { state[cat].push({ desc: '', q1: 0, q2: 0 }); fullRender(); }
-        function addCard() { state.cards.push({ name: 'Novo Cartão', q1_items: [], q2_items: [] }); fullRender(); }
+        window.fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        window.addRow = (cat) => { getPeriodData()[cat].push({ desc: '', q1: 0, q2: 0 }); fullRender(); };
+        window.addCard = () => { getPeriodData().cards.push({ name: 'Novo Cartão', q1_items: [], q2_items: [] }); fullRender(); };
 
-        function updateChart(data) {
+        window.updateChart = (data) => {
             const ctx = document.getElementById('chart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Fixos', 'Cartões', 'Invest', 'Lazer'],
-                    datasets: [{
-                        data: data,
-                        backgroundColor: ['#f87171', '#818cf8', '#60a5fa', '#fbbf24'],
-                        borderWidth: 0
-                    }]
+                    datasets: [{ data: data, backgroundColor: ['#f87171', '#818cf8', '#60a5fa', '#fbbf24'], borderWidth: 0 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '82%' }
             });
-        }
+        };
 
-        function resetData() { if (confirm('Zerar tudo?')) { localStorage.clear(); location.reload(); } }
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+        window.resetData = () => { if (confirm('Zerar tudo?')) { localStorage.clear(); location.reload(); } };
+        window.exportData = () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
             const dl = document.createElement('a');
             dl.setAttribute("href", dataStr);
             dl.setAttribute("download", "fluxo_real_backup.json");
             dl.click();
-        }
+        };
 
         window.onload = () => {
             render();
