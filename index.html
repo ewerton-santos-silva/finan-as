@@ -286,6 +286,7 @@
         </div>
 
         <!-- Tabs Container -->
+        <!-- Aba 1: Dashboard (Visão Geral) -->
         <div id="tab-fluxo" class="tab-content active">
             <!-- Seletor de Período -->
             <div class="flex p-1.5 bg-slate-200/50 backdrop-blur-md rounded-2xl mb-8 shadow-inner animate-fade-in"
@@ -330,9 +331,35 @@
                 <div id="card-ranking-list" class="space-y-3"></div>
             </div>
 
+            <!-- Gráfico -->
+            <div class="glass-card p-8 mt-8 text-center shadow-2xl animate-fade-in" style="animation-delay: 0.7s">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase mb-6 tracking-widest">Distribuição Mensal de
+                    Gastos</h3>
+                <div class="h-56 relative">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba 2: Fixos e Receitas (GLOBAIS) -->
+        <div id="tab-fixed" class="tab-content">
+            <div class="mb-4 bg-indigo-50 p-3 rounded-xl border border-indigo-100 flex items-start gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+                <p class="text-[10px] font-medium text-indigo-800 leading-relaxed">
+                    Os valores informados nesta aba são <strong>globais</strong> e se repetem todos os meses. Se você
+                    adicionar o salário aqui, ele constará em Janeiro, Fevereiro, etc. O botão Dia 15/Dia 30 da Visão
+                    Geral vai resgatar os montantes conforme você distribuiu.
+                </p>
+            </div>
+
+            <div id="container-fixos" class="space-y-6 animate-fade-in"></div>
+        </div>
+
+        <!-- Aba 3: Variáveis, Cartões, Investimento, Lazer (MENSAL) -->
+        <div id="tab-variable" class="tab-content">
             <!-- Gerenciamento de Cartões -->
             <div class="glass-card p-6 mb-8 border-l-4 border-indigo-400 shadow-xl animate-fade-in"
-                style="animation-delay: 0.5s">
+                style="animation-delay: 0.1s">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="font-black text-xs text-slate-700 uppercase tracking-widest flex items-center gap-2">
                         <i data-lucide="credit-card" class="w-4 h-4 text-indigo-500"></i> Faturas de Cartão
@@ -345,46 +372,10 @@
                 <div id="container-cartoes" class="space-y-6"></div>
             </div>
 
-            <!-- Outras Categorias -->
-            <div id="container-categorias" class="space-y-6 animate-fade-in" style="animation-delay: 0.6s"></div>
-
-            <!-- Gráfico -->
-            <div class="glass-card p-8 mt-8 text-center shadow-2xl animate-fade-in" style="animation-delay: 0.7s">
-                <h3 class="text-[11px] font-black text-slate-400 uppercase mb-6 tracking-widest">Distribuição Mensal de
-                    Gastos</h3>
-                <div class="h-56 relative">
-                    <canvas id="chart"></canvas>
-                </div>
-            </div>
+            <div id="container-variaveis" class="space-y-6 animate-fade-in" style="animation-delay: 0.2s"></div>
         </div>
 
-        <!-- Aba Custos Variáveis -->
-        <div id="tab-variable" class="tab-content">
-            <div class="glass-card p-6 border-l-4 border-amber-500 shadow-xl animate-fade-in">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-2">
-                        <div class="p-2 bg-amber-500/10 rounded-lg">
-                            <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-500"></i>
-                        </div>
-                        <span class="text-xs font-black text-slate-700 uppercase tracking-widest">Custos
-                            Variáveis</span>
-                    </div>
-                    <button onclick="addRow('variable')" class="text-indigo-600 hover:scale-125 transition-transform">
-                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                    </button>
-                </div>
-                <div id="list-variable" class="space-y-3"></div>
-            </div>
-
-            <div class="glass-card p-6 mt-6 border-t-4 border-amber-600 shadow-xl">
-                <div class="flex justify-between items-center">
-                    <p class="text-xs font-bold text-slate-400 uppercase">Total Variáveis</p>
-                    <p id="total-var-ui" class="text-2xl font-black text-amber-600 font-display">R$ 0,00</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Aba Objetivos/Metas -->
+        <!-- Aba 4: Objetivos/Metas -->
         <div id="tab-goals" class="tab-content">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-black text-slate-900 font-display">Seus Objetivos</h2>
@@ -401,7 +392,11 @@
     <nav class="bottom-nav">
         <button onclick="switchTab('fluxo')" class="nav-item active" id="nav-fluxo">
             <i data-lucide="layout-dashboard"></i>
-            <span>Fluxo</span>
+            <span>Painel</span>
+        </button>
+        <button onclick="switchTab('fixed')" class="nav-item" id="nav-fixed">
+            <i data-lucide="home"></i>
+            <span>Fixos</span>
         </button>
         <button onclick="switchTab('variable')" class="nav-item" id="nav-variable">
             <i data-lucide="shopping-bag"></i>
@@ -489,17 +484,34 @@
         }
 
         // Exposing functions to global scope for HTML onclicks
+        window.getGlobalData = () => {
+            if (!db.global) {
+                db.global = {
+                    income: [{ desc: 'Salário', q1: 0, q2: 0 }],
+                    fixed: [{ desc: 'Aluguel', q1: 0, q2: 0 }]
+                };
+            }
+            return db.global;
+        };
+
         window.getPeriodData = () => {
+            if (!db.global) getGlobalData(); // Ensure global exists
             if (!db.data[currentPeriodKey]) {
                 db.data[currentPeriodKey] = {
-                    income: [{ desc: 'Salário', q1: 0, q2: 0 }],
                     cards: [{ name: 'Cartão Principal', q1_items: [], q2_items: [] }],
-                    fixed: [{ desc: 'Aluguel', q1: 0, q2: 0 }],
                     variable: [],
                     invest: [],
                     leisure: []
                 };
             }
+
+            // Legacy Migration Support: If income/fixed are in period data but missing from global, move them
+            if (db.data[currentPeriodKey].income && !db.global.incomeLoaded) {
+                db.global.income = db.data[currentPeriodKey].income;
+                db.global.fixed = db.data[currentPeriodKey].fixed || [];
+                db.global.incomeLoaded = true; // prevent overwriting from other periods
+            }
+
             if (!db.metas) db.metas = [];
             return db.data[currentPeriodKey];
         };
@@ -509,6 +521,7 @@
             if (upload && auth && auth.currentUser) {
                 setDoc(doc(firestore, "users", auth.currentUser.uid), {
                     data: db.data,
+                    global: db.global || {},
                     metas: db.metas || [],
                     lastUpdate: new Date().toISOString()
                 }, { merge: true });
@@ -635,54 +648,72 @@
             render();
         };
 
-        window.render = () => {
-            const state = getPeriodData();
-            document.getElementById('label-periodo').innerText = currentPeriod === 'q1' ? 'DIA 15' : 'DIA 30';
-            const [year, month] = currentPeriodKey.split('-');
-            document.getElementById('select-month').value = month;
-            document.getElementById('select-year').value = year;
+        // Helper for rendering category sections
+        const renderCategoryBlock = (c, stateSource, isGlobal = false) => {
+            const dataTarget = isGlobal ? 'getGlobalData()' : 'getPeriodData()';
+            const state = isGlobal ? getGlobalData() : getPeriodData();
 
-            // Render categories (Income, Fixed, Invest, Leisure)
-            const catConfig = [
-                { id: 'income', label: 'Receitas', color: 'green-500', icon: 'trending-up' },
-                { id: 'fixed', label: 'Custos Fixos', color: 'red-400', icon: 'home' },
-                { id: 'invest', label: 'Investimentos', color: 'blue-500', icon: 'pie-chart' },
-                { id: 'leisure', label: 'Lazer e Extras', color: 'orange-400', icon: 'coffee' }
-            ];
-
-            const catContainer = document.getElementById('container-categorias');
-            if (catContainer) {
-                catContainer.innerHTML = '';
-                catConfig.forEach((c, idx) => {
-                    const div = document.createElement('div');
-                    div.className = `glass-card p-6 border-l-4 border-${c.color} shadow-xl`;
-                    div.innerHTML = `
+            return `
+                <div class="glass-card p-6 border-l-4 border-${c.color} shadow-xl animate-fade-in" style="animation-delay: ${c.delay || '0'}s">
                     <div class="flex justify-between items-center mb-6">
                         <div class="flex items-center gap-2">
                             <div class="p-2 bg-${c.color}/10 rounded-lg"><i data-lucide="${c.icon}" class="w-4 h-4 text-${c.color}"></i></div>
                             <span class="text-xs font-black text-slate-700 uppercase tracking-widest">${c.label}</span>
                         </div>
-                        <button onclick="addRow('${c.id}')" class="text-indigo-600 hover:scale-125 transition-transform"><i data-lucide="plus-circle" class="w-5 h-5"></i></button>
+                        <button onclick="addRow('${c.id}', ${isGlobal})" class="text-indigo-600 hover:scale-125 transition-transform"><i data-lucide="plus-circle" class="w-5 h-5"></i></button>
                     </div>
                     <div id="list-${c.id}" class="space-y-3">
                         ${(state[c.id] || []).map((item, i) => `
                             <div class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white/20 shadow-sm group">
-                                <input type="text" value="${item.desc}" oninput="getPeriodData().${c.id}[${i}].desc=this.value; delayedSave()" 
+                                <input type="text" value="${item.desc}" oninput="${dataTarget}.${c.id}[${i}].desc=this.value; delayedSave()" 
                                     class="flex-1 bg-transparent border-none p-0 text-sm text-slate-600 font-medium focus:ring-0" placeholder="Descrição">
                                 <div class="flex items-center gap-2">
                                     <span class="text-[10px] font-bold text-slate-300">R$</span>
-                                    <input type="number" value="${item[currentPeriod]}" oninput="getPeriodData().${c.id}[${i}].${currentPeriod}=parseFloat(this.value)||0; delayedSave()"
+                                    <input type="number" value="${item[currentPeriod]}" oninput="${dataTarget}.${c.id}[${i}].${currentPeriod}=parseFloat(this.value)||0; delayedSave()"
                                         class="w-20 bg-transparent border-none text-right font-black text-slate-900 p-0 text-sm focus:ring-0">
-                                    <button onclick="getPeriodData().${c.id}.splice(${i},1); fullRender()" class="text-slate-200 group-hover:text-red-400 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                    <button onclick="${dataTarget}.${c.id}.splice(${i},1); fullRender()" class="text-slate-200 group-hover:text-red-400 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                         `).join('')}
-                    </div>`;
-                    catContainer.appendChild(div);
-                });
+                    </div>
+                </div>`;
+        };
+
+        window.render = () => {
+            const state = getPeriodData();
+            const globalState = getGlobalData();
+            // Update Dashboard UI Text
+            if (document.getElementById('label-periodo')) {
+                document.getElementById('label-periodo').innerText = currentPeriod === 'q1' ? 'DIA 15' : 'DIA 30';
             }
 
-            // Render Cards
+            const [year, month] = currentPeriodKey.split('-');
+            if (document.getElementById('select-month')) document.getElementById('select-month').value = month;
+            if (document.getElementById('select-year')) document.getElementById('select-year').value = year;
+
+            // Render Fixos Tab (Global Data)
+            const globalCats = [
+                { id: 'income', label: 'Receitas (Global)', color: 'green-500', icon: 'trending-up', delay: 0.1 },
+                { id: 'fixed', label: 'Custos Fixos (Global)', color: 'red-400', icon: 'home', delay: 0.2 }
+            ];
+            const fixosContainer = document.getElementById('container-fixos');
+            if (fixosContainer) {
+                fixosContainer.innerHTML = globalCats.map(c => renderCategoryBlock(c, globalState, true)).join('');
+            }
+
+            // Render Variáveis Tab (Monthly Data - non cards)
+            const varCats = [
+                { id: 'variable', label: 'Custos Variáveis', color: 'amber-500', icon: 'shopping-bag', delay: 0.1 },
+                { id: 'invest', label: 'Investimentos', color: 'blue-500', icon: 'pie-chart', delay: 0.2 },
+                { id: 'leisure', label: 'Lazer e Extras', color: 'orange-400', icon: 'coffee', delay: 0.3 }
+            ];
+            const varsContainer = document.getElementById('container-variaveis');
+            if (varsContainer) {
+                varsContainer.innerHTML = varCats.map(c => renderCategoryBlock(c, state, false)).join('');
+            }
+
+            // Render Cards logic
+
             const cardContainer = document.getElementById('container-cartoes');
             if (cardContainer) {
                 cardContainer.innerHTML = '';
@@ -724,22 +755,7 @@
                 });
             }
 
-            // Render Variable Costs
-            const variableList = document.getElementById('list-variable');
-            if (variableList) {
-                variableList.innerHTML = (state.variable || []).map((item, i) => `
-                    <div class="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl border border-slate-100 shadow-sm group">
-                        <input type="text" value="${item.desc}" oninput="getPeriodData().variable[${i}].desc=this.value; delayedSave()" 
-                            class="flex-1 bg-transparent border-none p-0 text-sm text-slate-600 font-medium focus:ring-0" placeholder="Descrição">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold text-slate-300">R$</span>
-                            <input type="number" value="${item[currentPeriod]}" oninput="getPeriodData().variable[${i}].${currentPeriod}=parseFloat(this.value)||0; delayedSave()"
-                                class="w-20 bg-transparent border-none text-right font-black text-slate-900 p-0 text-sm focus:ring-0">
-                            <button onclick="getPeriodData().variable.splice(${i},1); fullRender()" class="text-slate-200 group-hover:text-red-400 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
-                        </div>
-                    </div>
-                `).join('') || '<p class="text-[10px] text-slate-400 italic text-center py-4">Nenhum custo variável este mês.</p>';
-            }
+            <!-- Deleted legacy variables rendering since it uses the robust rendering method now -->
 
             // Render Goals
             const goalContainer = document.getElementById('container-goals');
@@ -822,12 +838,15 @@
 
         window.calculate = () => {
             const state = getPeriodData();
+            const globalState = getGlobalData();
+
             let tInc = 0, tFix = 0, tInv = 0, tLaz = 0, tCrd = 0, tVar = 0;
             let catExpenses = [];
             let groupMap = {};
 
-            (state.income || []).forEach(i => tInc += (i[currentPeriod] || 0));
-            (state.fixed || []).forEach(i => { tFix += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
+            (globalState.income || []).forEach(i => tInc += (i[currentPeriod] || 0));
+            (globalState.fixed || []).forEach(i => { tFix += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
+
             (state.invest || []).forEach(i => { tInv += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
             (state.leisure || []).forEach(i => { tLaz += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
             (state.variable || []).forEach(i => { tVar += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
@@ -878,7 +897,11 @@
         };
 
         window.fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        window.addRow = (cat) => { (getPeriodData()[cat] = getPeriodData()[cat] || []).push({ desc: '', q1: 0, q2: 0 }); fullRender(); };
+        window.addRow = (cat, isGlobal = false) => {
+            const dataObj = isGlobal ? getGlobalData() : getPeriodData();
+            (dataObj[cat] = dataObj[cat] || []).push({ desc: '', q1: 0, q2: 0 });
+            fullRender();
+        };
         window.addCard = () => { getPeriodData().cards.push({ name: 'Novo Cartão', q1_items: [], q2_items: [] }); fullRender(); };
         window.addGoal = () => { db.metas = db.metas || []; db.metas.push({ name: 'Novo Objetivo', target: 0, current: 0, deadline: new Date().toISOString().slice(0, 7) }); fullRender(); };
 
@@ -919,7 +942,6 @@
             lucide.createIcons();
         };
     </script>
-</body>
 </body>
 
 </html>
