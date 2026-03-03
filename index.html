@@ -196,6 +196,7 @@
             <div>
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight font-display">Fluxo<span
                         class="text-indigo-600">Real</span></h1>
+                <p id="user-greeting" class="text-[12px] font-black text-indigo-500 mt-0.5 tracking-widest hidden"></p>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
                     <p id="auth-status" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Local</p>
@@ -416,12 +417,19 @@
             <button onclick="toggleLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight font-display mb-2">Entrar no <span
-                    class="text-indigo-600">Fluxo</span></h2>
-            <p class="text-xs text-slate-500 mb-8 font-medium">Sincronize seus dados em tempo real entre dispositivos.
+            <h2 id="auth-title" class="text-2xl font-black text-slate-900 tracking-tight font-display mb-2">Entrar no
+                <span class="text-indigo-600">Fluxo</span></h2>
+            <p id="auth-subtitle" class="text-xs text-slate-500 mb-8 font-medium">Sincronize seus dados em tempo real
+                entre dispositivos.
             </p>
 
             <div class="space-y-4">
+                <div id="register-name-field" class="hidden">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Seu
+                        Nome</label>
+                    <input type="text" id="login-name" placeholder="Como quer ser chamado?"
+                        class="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20">
+                </div>
                 <div>
                     <label
                         class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">E-mail</label>
@@ -438,8 +446,15 @@
                     class="w-full btn-primary py-4 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all mt-4">
                     Conectar Conta
                 </button>
-                <p class="text-[9px] text-center text-slate-400 mt-4 leading-relaxed">Nota: O login compartilhado
-                    utiliza o Firebase para sincronização instantânea de dados.</p>
+                <div class="text-center mt-4">
+                    <button onclick="toggleAuthMode()" id="btn-auth-toggle"
+                        class="text-[10px] font-black text-indigo-500 hover:text-indigo-700 tracking-widest uppercase transition-colors p-2">
+                        Não possui conta? Cadastre-se
+                    </button>
+                </div>
+                <p class="text-[9px] text-center text-slate-400 mt-2 leading-relaxed">Nota: O login compartilhado
+                    utiliza o Firebase para sincronização instantânea de dados. O registro depende de aprovação do
+                    administrador.</p>
             </div>
         </div>
     </div>
@@ -545,77 +560,120 @@
             const modal = document.getElementById('login-modal');
             modal.classList.toggle('hidden');
             modal.classList.toggle('flex');
+
+            // Reset to Login Mode if closed
+            if (modal.classList.contains('hidden')) {
+                const isReg = !document.getElementById('register-name-field').classList.contains('hidden');
+                if (isReg) window.toggleAuthMode();
+            }
+        };
+
+        window.toggleAuthMode = () => {
+            const nameField = document.getElementById('register-name-field');
+            const isReg = nameField.classList.contains('hidden'); // becoming register
+            nameField.classList.toggle('hidden');
+
+            document.getElementById('auth-title').innerHTML = isReg ? 'Criar <span class="text-indigo-600">Conta</span>' : 'Entrar no <span class="text-indigo-600">Fluxo</span>';
+            document.getElementById('auth-subtitle').innerText = isReg ? 'O acesso será liberado após a aprovação do administrador.' : 'Sincronize seus dados em tempo real entre dispositivos.';
+            document.getElementById('btn-auth-submit').innerText = isReg ? 'Solicitar Acesso' : 'Conectar Conta';
+            document.getElementById('btn-auth-toggle').innerText = isReg ? 'Já possui conta? Entrar' : 'Não possui conta? Cadastre-se';
         };
 
         window.handleAuth = async () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-password').value;
+            const name = document.getElementById('login-name').value;
+            const isReg = !document.getElementById('register-name-field').classList.contains('hidden');
             const btn = document.getElementById('btn-auth-submit');
 
             if (!auth) return alert("Firebase não configurado.");
-            if (!email || !pass) return alert("Preencha todos os campos");
+            if (!email || !pass || (isReg && !name)) return alert("Preencha todos os campos corretamente.");
 
             try {
                 btn.disabled = true;
                 btn.innerText = "Processando...";
 
-                try {
-                    // Tenta primeiro o login
+                if (isReg) {
+                    const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                    await setDoc(doc(firestore, "users", userCred.user.uid), {
+                        name: name,
+                        email: email,
+                        status: "pending",
+                        data: {},
+                        global: {},
+                        metas: [],
+                        createdAt: new Date().toISOString()
+                    });
+                    alert("Cadastro realizado com sucesso! Aguarde a aprovação do administrador para acessar o sistema.");
+                    await signOut(auth);
+                    toggleLoginModal();
+                } else {
                     await signInWithEmailAndPassword(auth, email, pass);
-                } catch (e) {
-                    // Se o erro for que o usuário não existe, tenta criar a conta
-                    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-                        try {
-                            await createUserWithEmailAndPassword(auth, email, pass);
-                        } catch (signupErr) {
-                            throw signupErr; // Repassa o erro de cadastro
-                        }
-                    } else {
-                        throw e; // Repassa erro de senha incorreta ou outros
-                    }
+                    toggleLoginModal();
                 }
-                toggleLoginModal();
             } catch (error) {
                 console.error("Auth Error:", error.code, error.message);
                 let msg = "Erro na autenticação: " + error.message;
 
-                // Mapeamento de erros comuns do Firebase para Português
                 const errorMap = {
                     'auth/wrong-password': "Senha incorreta. Verifique e tente novamente.",
-                    'auth/user-not-found': "Usuário não encontrado. Criando nova conta...",
+                    'auth/user-not-found': "Usuário não encontrado.",
                     'auth/invalid-credential': "E-mail ou senha incorretos.",
                     'auth/email-already-in-use': "Este e-mail já está em uso com outra senha.",
                     'auth/invalid-email': "Formato de e-mail inválido.",
-                    'auth/weak-password': "A senha deve ter pelo menos 6 caracteres.",
-                    'auth/configuration-not-found': "O provedor 'E-mail/Senha' não está ativado no seu Console do Firebase.",
-                    'auth/operation-not-allowed': "Login por E-mail/Senha desativado no Firebase.",
-                    'auth/too-many-requests': "Muitas tentativas falhas. Tente novamente mais tarde."
+                    'auth/weak-password': "A senha deve ter pelo menos 6 caracteres."
                 };
 
-                if (errorMap[error.code]) {
-                    msg = errorMap[error.code];
-                }
+                if (errorMap[error.code]) msg = errorMap[error.code];
                 alert(msg);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Conectar Conta";
+                btn.innerText = isReg ? "Solicitar Acesso" : "Conectar Conta";
             }
         };
 
         window.handleSignOut = async () => { if (auth) await signOut(auth); };
 
+        let unsubSnapshot = null;
         function setupAuthListener() {
             onAuthStateChanged(auth, user => {
                 const statusEl = document.getElementById('auth-status');
                 const btnLogin = document.getElementById('btn-login');
+                const greetObj = document.getElementById('user-greeting');
+
+                if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
+
                 if (user) {
-                    db.user = { uid: user.uid, email: user.email };
-                    statusEl.innerText = "Sincronizado";
-                    btnLogin.innerHTML = `<i data-lucide="log-out" class="w-3 h-3"></i> Sair`;
-                    btnLogin.onclick = handleSignOut;
-                    onSnapshot(doc(firestore, "users", user.uid), (docSnap) => {
+                    unsubSnapshot = onSnapshot(doc(firestore, "users", user.uid), (docSnap) => {
                         if (docSnap.exists()) {
-                            db.data = docSnap.data().data;
+                            const data = docSnap.data();
+                            if (data.status === "pending") {
+                                alert("Sua conta está aguardando aprovação do administrador.");
+                                handleSignOut();
+                                return;
+                            }
+
+                            db.user = { uid: user.uid, email: user.email, name: data.name || "Usuário" };
+                            statusEl.innerText = "Sincronizado";
+                            btnLogin.innerHTML = `<i data-lucide="log-out" class="w-3 h-3"></i> Sair`;
+                            btnLogin.onclick = handleSignOut;
+
+                            if (greetObj) {
+                                greetObj.innerText = `Olá, ${db.user.name}`;
+                                greetObj.classList.remove('hidden');
+                            }
+
+                            db.data = data.data || {};
+                            db.global = data.global || {};
+                            db.metas = data.metas || [];
+                            saveDB(false);
+                            render();
+                        } else {
+                            // Legacy admins or missing docs
+                            db.user = { uid: user.uid, email: user.email, name: "Admin (Legado)" };
+                            statusEl.innerText = "Sincronizado (Legado)";
+                            btnLogin.innerHTML = `<i data-lucide="log-out" class="w-3 h-3"></i> Sair`;
+                            btnLogin.onclick = handleSignOut;
                             saveDB(false);
                             render();
                         }
@@ -625,8 +683,13 @@
                     statusEl.innerText = "Local";
                     btnLogin.innerHTML = `<i data-lucide="user" class="w-3 h-3"></i> Login`;
                     btnLogin.onclick = toggleLoginModal;
+                    if (greetObj) {
+                        greetObj.innerText = "";
+                        greetObj.classList.add('hidden');
+                    }
+                    fullRender(); // Refresh pure local state
                 }
-                lucide.createIcons();
+                setTimeout(() => lucide.createIcons(), 100);
             });
         }
 
