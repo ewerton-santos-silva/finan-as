@@ -841,13 +841,26 @@
             let tInc = 0, tFix = 0, tInv = 0, tLaz = 0, tCrd = 0, tVar = 0;
             let catExpenses = [];
             let groupMap = {};
+            let chartItems = [];
 
             (globalState.income || []).forEach(i => tInc += (i[currentPeriod] || 0));
-            (globalState.fixed || []).forEach(i => { tFix += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
+            (globalState.fixed || []).forEach(i => {
+                let v = i[currentPeriod] || 0; tFix += v;
+                if (v > 0) { catExpenses.push({ desc: i.desc, val: v }); chartItems.push({ name: i.desc || 'Fixo', val: v }); }
+            });
 
-            (state.invest || []).forEach(i => { tInv += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
-            (state.leisure || []).forEach(i => { tLaz += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
-            (state.variable || []).forEach(i => { tVar += (i[currentPeriod] || 0); if (i[currentPeriod] > 0) catExpenses.push({ desc: i.desc, val: i[currentPeriod] }); });
+            (state.invest || []).forEach(i => {
+                let v = i[currentPeriod] || 0; tInv += v;
+                if (v > 0) { catExpenses.push({ desc: i.desc, val: v }); chartItems.push({ name: i.desc || 'Investimento', val: v }); }
+            });
+            (state.leisure || []).forEach(i => {
+                let v = i[currentPeriod] || 0; tLaz += v;
+                if (v > 0) { catExpenses.push({ desc: i.desc, val: v }); chartItems.push({ name: i.desc || 'Lazer', val: v }); }
+            });
+            (state.variable || []).forEach(i => {
+                let v = i[currentPeriod] || 0; tVar += v;
+                if (v > 0) { catExpenses.push({ desc: i.desc, val: v }); chartItems.push({ name: i.desc || 'Variável', val: v }); }
+            });
 
             (state.cards || []).forEach(c => {
                 const items = c[`${currentPeriod}_items`] || [];
@@ -860,6 +873,8 @@
                     }
                 });
             });
+
+            Object.values(groupMap).forEach(it => { chartItems.push({ name: it.originalName, val: it.val }); });
 
             const totalExp = tFix + tInv + tLaz + tCrd + tVar;
             const bal = tInc - totalExp;
@@ -891,7 +906,14 @@
                 } else { rankList.innerHTML = '<p class="text-[10px] text-slate-400 italic text-center py-2">Sem gastos no cartão.</p>'; }
             }
 
-            updateChart([tFix, tCrd, tInv, tLaz, tVar]);
+            // Prepare chart details
+            chartItems.sort((a, b) => b.val - a.val); // Sort largest expenses first
+            const baseColors = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#4ade80', '#34d399', '#2dd4bf', '#38bdf8', '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb7185'];
+            let cLabels = chartItems.map(it => it.name);
+            let cData = chartItems.map(it => it.val);
+            let cColors = chartItems.map((_, idx) => baseColors[idx % baseColors.length]);
+
+            updateChart(cLabels, cData, cColors);
         };
 
         window.fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -903,7 +925,7 @@
         window.addCard = () => { getPeriodData().cards.push({ name: 'Novo Cartão', q1_items: [], q2_items: [] }); fullRender(); };
         window.addGoal = () => { db.metas = db.metas || []; db.metas.push({ name: 'Novo Objetivo', target: 0, current: 0, deadline: new Date().toISOString().slice(0, 7) }); fullRender(); };
 
-        window.updateChart = (data) => {
+        window.updateChart = (labels, data, colors) => {
             const canvas = document.getElementById('chart');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -911,10 +933,38 @@
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Fixos', 'Cartões', 'Invest', 'Lazer', 'Variáveis'],
-                    datasets: [{ data: data, backgroundColor: ['#f87171', '#818cf8', '#60a5fa', '#fbbf24', '#f59e0b'], borderWidth: 0 }]
+                    labels: labels.length ? labels : ['Sem Registros'],
+                    datasets: [{
+                        data: data.length ? data : [1],
+                        backgroundColor: colors.length ? colors : ['#f1f5f9'],
+                        borderWidth: 0
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '82%' }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: labels.length > 0,
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                boxWidth: 12,
+                                boxHeight: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 10,
+                                    weight: 700
+                                },
+                                color: '#64748b'
+                            }
+                        }
+                    },
+                    cutout: '75%', // Thicker ring because legend adds space
+                    layout: { padding: { bottom: 20 } }
+                }
             });
         };
 
