@@ -196,17 +196,8 @@
             <div>
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight font-display">Fluxo<span
                         class="text-indigo-600">Real</span></h1>
-                <p id="user-greeting" class="text-[12px] font-black text-indigo-500 mt-0.5 tracking-widest hidden"></p>
-                <div class="flex items-center gap-1.5 mt-1">
-                    <span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <p id="auth-status" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Local</p>
-                </div>
             </div>
             <div class="flex gap-2">
-                <button id="btn-login" onclick="toggleLoginModal()"
-                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95">
-                    <i data-lucide="user" class="w-3 h-3"></i> Login
-                </button>
                 <div class="flex gap-2">
                     <button onclick="exportData()" title="Backup"
                         class="p-2.5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
@@ -410,77 +401,14 @@
     </nav>
 
 
-    <!-- Login Modal -->
-    <div id="login-modal"
-        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden items-center justify-center p-6 transition-all">
-        <div class="glass-card p-8 w-full max-w-sm shadow-2xl relative animate-fade-in">
-            <button onclick="toggleLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-            <h2 id="auth-title" class="text-2xl font-black text-slate-900 tracking-tight font-display mb-2">Entrar no
-                <span class="text-indigo-600">Fluxo</span></h2>
-            <p id="auth-subtitle" class="text-xs text-slate-500 mb-8 font-medium">Sincronize seus dados em tempo real
-                entre dispositivos.
-            </p>
+    <!-- Login Modal Removed (Offline Mode) -->
 
-            <div class="space-y-4">
-                <div id="register-name-field" class="hidden">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Seu
-                        Nome</label>
-                    <input type="text" id="login-name" placeholder="Como quer ser chamado?"
-                        class="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20">
-                </div>
-                <div>
-                    <label
-                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">E-mail</label>
-                    <input type="email" id="login-email" placeholder="seu@email.com"
-                        class="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20">
-                </div>
-                <div>
-                    <label
-                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Senha</label>
-                    <input type="password" id="login-password" placeholder="••••••••"
-                        class="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20">
-                </div>
-                <button onclick="handleAuth()" id="btn-auth-submit"
-                    class="w-full btn-primary py-4 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all mt-4">
-                    Conectar Conta
-                </button>
-                <div class="text-center mt-4">
-                    <button onclick="toggleAuthMode()" id="btn-auth-toggle"
-                        class="text-[10px] font-black text-indigo-500 hover:text-indigo-700 tracking-widest uppercase transition-colors p-2">
-                        Não possui conta? Cadastre-se
-                    </button>
-                </div>
-                <p class="text-[9px] text-center text-slate-400 mt-2 leading-relaxed">Nota: O login compartilhado
-                    utiliza o Firebase para sincronização instantânea de dados. O registro depende de aprovação do
-                    administrador.</p>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // CONFIGURAÇÃO DO FIREBASE (O usuário deve preencher com seus dados do Console do Firebase)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAv0YdaJfdXzh1A0AjyOAO_XPdlAn3bADg",
-            authDomain: "fluxo-real-10a07.firebaseapp.com",
-            projectId: "fluxo-real-10a07",
-            storageBucket: "fluxo-real-10a07.firebasestorage.app",
-            messagingSenderId: "297335341036",
-            appId: "1:297335341036:web:9917879a63b2b8adf80ac9",
-            measurementId: "G-1JYPRD06YY"
-        };
-
+    <script>
         let db = JSON.parse(localStorage.getItem('fluxo_real_v2')) || { user: null, data: {} };
         let now = new Date();
         let currentPeriodKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
         let currentPeriod = 'q1';
         let chartInstance;
-        let auth, firestore;
 
         // Migração de dados antigos
         const oldState = JSON.parse(localStorage.getItem('fluxo_real_db'));
@@ -488,14 +416,6 @@
             db.data[currentPeriodKey] = oldState;
             localStorage.removeItem('fluxo_real_db');
             localStorage.setItem('fluxo_real_v2', JSON.stringify(db));
-        }
-
-        // Inicializa Firebase
-        if (firebaseConfig.apiKey !== "AIzaSy...") {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            firestore = getFirestore(app);
-            setupAuthListener();
         }
 
         // Exposing functions to global scope for HTML onclicks
@@ -531,16 +451,8 @@
             return db.data[currentPeriodKey];
         };
 
-        window.saveDB = (upload = true) => {
+        window.saveDB = () => {
             localStorage.setItem('fluxo_real_v2', JSON.stringify(db));
-            if (upload && auth && auth.currentUser) {
-                setDoc(doc(firestore, "users", auth.currentUser.uid), {
-                    data: db.data,
-                    global: db.global || {},
-                    metas: db.metas || [],
-                    lastUpdate: new Date().toISOString()
-                }, { merge: true });
-            }
             calculate();
         };
 
@@ -556,142 +468,17 @@
             updatePeriod();
         };
 
-        window.toggleLoginModal = () => {
-            const modal = document.getElementById('login-modal');
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
+        window.diffMonths = (deadlineStr) => {
+            if (!deadlineStr) return 0;
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), 1);
+            const [y, m] = deadlineStr.split('-');
+            const deadline = new Date(parseInt(y), parseInt(m) - 1, 1);
 
-            // Reset to Login Mode if closed
-            if (modal.classList.contains('hidden')) {
-                const isReg = !document.getElementById('register-name-field').classList.contains('hidden');
-                if (isReg) window.toggleAuthMode();
-            }
+            let months = (deadline.getFullYear() - today.getFullYear()) * 12;
+            months += (deadline.getMonth() - today.getMonth());
+            return months <= 0 ? 0 : months;
         };
-
-        window.toggleAuthMode = () => {
-            const nameField = document.getElementById('register-name-field');
-            const isReg = nameField.classList.contains('hidden'); // becoming register
-            nameField.classList.toggle('hidden');
-
-            document.getElementById('auth-title').innerHTML = isReg ? 'Criar <span class="text-indigo-600">Conta</span>' : 'Entrar no <span class="text-indigo-600">Fluxo</span>';
-            document.getElementById('auth-subtitle').innerText = isReg ? 'O acesso será liberado após a aprovação do administrador.' : 'Sincronize seus dados em tempo real entre dispositivos.';
-            document.getElementById('btn-auth-submit').innerText = isReg ? 'Solicitar Acesso' : 'Conectar Conta';
-            document.getElementById('btn-auth-toggle').innerText = isReg ? 'Já possui conta? Entrar' : 'Não possui conta? Cadastre-se';
-        };
-
-        window.handleAuth = async () => {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-password').value;
-            const name = document.getElementById('login-name').value;
-            const isReg = !document.getElementById('register-name-field').classList.contains('hidden');
-            const btn = document.getElementById('btn-auth-submit');
-
-            if (!auth) return alert("Firebase não configurado.");
-            if (!email || !pass || (isReg && !name)) return alert("Preencha todos os campos corretamente.");
-
-            try {
-                btn.disabled = true;
-                btn.innerText = "Processando...";
-
-                if (isReg) {
-                    const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-                    await setDoc(doc(firestore, "users", userCred.user.uid), {
-                        name: name,
-                        email: email,
-                        status: "pending",
-                        data: {},
-                        global: {},
-                        metas: [],
-                        createdAt: new Date().toISOString()
-                    });
-                    alert("Cadastro realizado com sucesso! Aguarde a aprovação do administrador para acessar o sistema.");
-                    await signOut(auth);
-                    toggleLoginModal();
-                } else {
-                    await signInWithEmailAndPassword(auth, email, pass);
-                    toggleLoginModal();
-                }
-            } catch (error) {
-                console.error("Auth Error:", error.code, error.message);
-                let msg = "Erro na autenticação: " + error.message;
-
-                const errorMap = {
-                    'auth/wrong-password': "Senha incorreta. Verifique e tente novamente.",
-                    'auth/user-not-found': "Usuário não encontrado.",
-                    'auth/invalid-credential': "E-mail ou senha incorretos.",
-                    'auth/email-already-in-use': "Este e-mail já está em uso com outra senha.",
-                    'auth/invalid-email': "Formato de e-mail inválido.",
-                    'auth/weak-password': "A senha deve ter pelo menos 6 caracteres."
-                };
-
-                if (errorMap[error.code]) msg = errorMap[error.code];
-                alert(msg);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = isReg ? "Solicitar Acesso" : "Conectar Conta";
-            }
-        };
-
-        window.handleSignOut = async () => { if (auth) await signOut(auth); };
-
-        let unsubSnapshot = null;
-        function setupAuthListener() {
-            onAuthStateChanged(auth, user => {
-                const statusEl = document.getElementById('auth-status');
-                const btnLogin = document.getElementById('btn-login');
-                const greetObj = document.getElementById('user-greeting');
-
-                if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
-
-                if (user) {
-                    unsubSnapshot = onSnapshot(doc(firestore, "users", user.uid), (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            if (data.status === "pending") {
-                                alert("Sua conta está aguardando aprovação do administrador.");
-                                handleSignOut();
-                                return;
-                            }
-
-                            db.user = { uid: user.uid, email: user.email, name: data.name || "Usuário" };
-                            statusEl.innerText = "Sincronizado";
-                            btnLogin.innerHTML = `<i data-lucide="log-out" class="w-3 h-3"></i> Sair`;
-                            btnLogin.onclick = handleSignOut;
-
-                            if (greetObj) {
-                                greetObj.innerText = `Olá, ${db.user.name}`;
-                                greetObj.classList.remove('hidden');
-                            }
-
-                            db.data = data.data || {};
-                            db.global = data.global || {};
-                            db.metas = data.metas || [];
-                            saveDB(false);
-                            render();
-                        } else {
-                            // Legacy admins or missing docs
-                            db.user = { uid: user.uid, email: user.email, name: "Admin (Legado)" };
-                            statusEl.innerText = "Sincronizado (Legado)";
-                            btnLogin.innerHTML = `<i data-lucide="log-out" class="w-3 h-3"></i> Sair`;
-                            btnLogin.onclick = handleSignOut;
-                            saveDB(false);
-                            render();
-                        }
-                    });
-                } else {
-                    db.user = null;
-                    statusEl.innerText = "Local";
-                    btnLogin.innerHTML = `<i data-lucide="user" class="w-3 h-3"></i> Login`;
-                    btnLogin.onclick = toggleLoginModal;
-                    if (greetObj) {
-                        greetObj.innerText = "";
-                        greetObj.classList.add('hidden');
-                    }
-                    fullRender(); // Refresh pure local state
-                }
-                setTimeout(() => lucide.createIcons(), 100);
-            });
-        }
 
         window.setPeriod = (p) => {
             currentPeriod = p;
@@ -824,9 +611,9 @@
                 goalContainer.innerHTML = '';
                 (db.metas || []).forEach((goal, gi) => {
                     const remaining = goal.target - goal.current;
-                    const months = diffMonths(new Date(), new Date(goal.deadline));
+                    const months = diffMonths(goal.deadline);
                     const perMonth = months > 0 ? remaining / months : remaining;
-                    const progress = Math.min(100, (goal.current / goal.target) * 100);
+                    const progress = goal.target > 0 ? Math.min(100, (goal.current / goal.target) * 100) : 0;
 
                     const div = document.createElement('div');
                     div.className = "glass-card p-6 border-t-4 border-indigo-500";
@@ -1030,14 +817,6 @@
                 }
             });
         };
-
-        function diffMonths(d1, d2) {
-            let months;
-            months = (d2.getFullYear() - d1.getFullYear()) * 12;
-            months -= d1.getMonth();
-            months += d2.getMonth();
-            return months <= 0 ? 0 : months;
-        }
 
         window.resetData = () => { if (confirm('Zerar tudo?')) { localStorage.clear(); location.reload(); } };
         window.exportData = () => {
