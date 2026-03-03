@@ -530,9 +530,7 @@
         };
 
         window.updatePeriod = () => {
-            const m = document.getElementById('select-month').value;
-            const y = document.getElementById('select-year').value;
-            currentPeriodKey = `${y}-${m}`;
+            currentPeriodKey = `${document.getElementById('select-year').value}-${document.getElementById('select-month').value}`;
             fullRender();
         };
 
@@ -755,7 +753,7 @@
                 });
             }
 
-            <!-- Deleted legacy variables rendering since it uses the robust rendering method now -->
+            // Deleted legacy variables rendering since it uses the robust rendering method now
 
             // Render Goals
             const goalContainer = document.getElementById('container-goals');
