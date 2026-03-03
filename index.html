@@ -619,7 +619,7 @@
                     div.className = "glass-card p-6 border-t-4 border-indigo-500";
                     div.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
-                        <div>
+                        <div id="goal-info-${gi}">
                             <input type="text" value="${goal.name}" oninput="db.metas[${gi}].name=this.value; delayedSave()" 
                                 class="bg-transparent border-none font-black text-lg p-0 focus:ring-0 text-slate-900 w-full" placeholder="Nome da Meta">
                             <p class="text-[10px] font-bold text-slate-400 uppercase">Faltam ${months} meses</p>
@@ -628,23 +628,23 @@
                     </div>
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
+                             <div>
                                 <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Valor Alvo</label>
-                                <input type="number" value="${goal.target}" oninput="db.metas[${gi}].target=parseFloat(this.value)||0; fullRender()" 
+                                <input type="number" value="${goal.target}" oninput="db.metas[${gi}].target=parseFloat(this.value)||0; updateGoalUI(${gi}); delayedSave()" 
                                     class="w-full bg-slate-50 rounded-lg border-none px-3 py-2 text-sm font-black text-slate-700">
                             </div>
                             <div>
                                 <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Já Guardado</label>
-                                <input type="number" value="${goal.current}" oninput="db.metas[${gi}].current=parseFloat(this.value)||0; fullRender()" 
+                                <input type="number" value="${goal.current}" oninput="db.metas[${gi}].current=parseFloat(this.value)||0; updateGoalUI(${gi}); delayedSave()" 
                                     class="w-full bg-slate-50 rounded-lg border-none px-3 py-2 text-sm font-black text-slate-700">
                             </div>
                         </div>
-                        <div>
+                         <div>
                             <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Data Limite (AAAA-MM)</label>
-                            <input type="month" value="${goal.deadline}" oninput="db.metas[${gi}].deadline=this.value; fullRender()" 
+                            <input type="month" value="${goal.deadline}" oninput="db.metas[${gi}].deadline=this.value; updateGoalUI(${gi}); delayedSave()" 
                                 class="w-full bg-slate-50 rounded-lg border-none px-3 py-2 text-sm font-black text-slate-700">
                         </div>
-                        <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                         <div id="goal-plan-${gi}" class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
                             <p class="text-[10px] font-black text-indigo-400 uppercase mb-1">Plano de Investimento</p>
                             <div class="flex justify-between items-end">
                                 <div>
@@ -682,6 +682,38 @@
             const total = items.reduce((a, b) => a + b.val, 0);
             const el = document.getElementById(`card-total-ui-${ci}`);
             if (el) el.innerText = fmt(total);
+        };
+
+        window.updateGoalUI = (gi) => {
+            const goal = db.metas[gi];
+            const remaining = goal.target - goal.current;
+            const months = diffMonths(goal.deadline);
+            const perMonth = months > 0 ? remaining / months : remaining;
+            const progress = goal.target > 0 ? Math.min(100, (goal.current / goal.target) * 100) : 0;
+
+            const infoEl = document.getElementById(`goal-info-${gi}`);
+            if (infoEl) {
+                const subtext = infoEl.querySelector('p');
+                if (subtext) subtext.innerText = `Faltam ${months} meses`;
+            }
+
+            const planEl = document.getElementById(`goal-plan-${gi}`);
+            if (planEl) {
+                planEl.innerHTML = `
+                    <p class="text-[10px] font-black text-indigo-400 uppercase mb-1">Plano de Investimento</p>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-xl font-black text-indigo-600 font-display">${fmt(perMonth)}/mês</p>
+                            <p class="text-[9px] font-bold text-indigo-400">para atingir ${fmt(goal.target)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-black text-indigo-600">${progress.toFixed(0)}%</p>
+                        </div>
+                    </div>
+                    <div class="w-full h-1.5 bg-indigo-100 rounded-full mt-2 overflow-hidden">
+                        <div class="h-full bg-indigo-500 rounded-full" style="width: ${progress}%"></div>
+                    </div>`;
+            }
         };
 
         window.calculate = () => {
