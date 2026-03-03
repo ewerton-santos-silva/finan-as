@@ -811,11 +811,19 @@
             const canvas = document.getElementById('chart');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
+
+            // Calculate total for percentages
+            const total = data.reduce((a, b) => a + b, 0);
+            const labelsWithPercent = labels.map((l, i) => {
+                const percent = total > 0 ? ((data[i] / total) * 100).toFixed(1) : 0;
+                return `${l} (${percent}%)`;
+            });
+
             if (chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: labels.length ? labels : ['Sem Registros'],
+                    labels: labels.length ? labelsWithPercent : ['Sem Registros'],
                     datasets: [{
                         data: data.length ? data : [1],
                         backgroundColor: colors.length ? colors : ['#f1f5f9'],
