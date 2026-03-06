@@ -408,6 +408,7 @@
         let now = new Date();
         let currentPeriodKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
         let currentPeriod = 'q1';
+        let activeTab = 'fluxo';
         let chartInstance;
 
         // Migração de dados antigos
@@ -435,6 +436,7 @@
                 db.data[currentPeriodKey] = {
                     cards: [{ name: 'Cartão Principal', q1_items: [], q2_items: [] }],
                     variable: [],
+                    extra_income: [],
                     invest: [],
                     leisure: []
                 };
@@ -489,6 +491,7 @@
         };
 
         window.switchTab = (tab) => {
+            activeTab = tab;
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
@@ -551,9 +554,10 @@
 
             // Render Variáveis Tab (Monthly Data - non cards)
             const varCats = [
-                { id: 'variable', label: 'Custos Variáveis', color: 'amber-500', icon: 'shopping-bag', delay: 0.1 },
-                { id: 'invest', label: 'Investimentos', color: 'blue-500', icon: 'pie-chart', delay: 0.2 },
-                { id: 'leisure', label: 'Lazer e Extras', color: 'orange-400', icon: 'coffee', delay: 0.3 }
+                { id: 'extra_income', label: 'Receitas Extras', color: 'green-400', icon: 'trending-up', delay: 0.1 },
+                { id: 'variable', label: 'Custos Variáveis', color: 'amber-500', icon: 'shopping-bag', delay: 0.2 },
+                { id: 'invest', label: 'Investimentos', color: 'blue-500', icon: 'pie-chart', delay: 0.3 },
+                { id: 'leisure', label: 'Lazer e Extras', color: 'orange-400', icon: 'coffee', delay: 0.4 }
             ];
             const varsContainer = document.getElementById('container-variaveis');
             if (varsContainer) {
@@ -720,12 +724,14 @@
             const state = getPeriodData();
             const globalState = getGlobalData();
 
-            let tInc = 0, tFix = 0, tInv = 0, tLaz = 0, tCrd = 0, tVar = 0;
+            let tIncGlobal = 0, tIncExtra = 0, tFix = 0, tInv = 0, tLaz = 0, tCrd = 0, tVar = 0;
             let catExpenses = [];
             let groupMap = {};
             let chartItems = [];
 
-            (globalState.income || []).forEach(i => tInc += (i[currentPeriod] || 0));
+            (globalState.income || []).forEach(i => tIncGlobal += (i[currentPeriod] || 0));
+            (state.extra_income || []).forEach(i => tIncExtra += (i[currentPeriod] || 0));
+
             (globalState.fixed || []).forEach(i => {
                 let v = i[currentPeriod] || 0; tFix += v;
                 if (v > 0) { catExpenses.push({ desc: i.desc, val: v }); chartItems.push({ name: i.desc || 'Fixo', val: v }); }
@@ -758,19 +764,48 @@
 
             Object.values(groupMap).forEach(it => { chartItems.push({ name: it.originalName, val: it.val }); });
 
-            const totalExp = tFix + tInv + tLaz + tCrd + tVar;
-            const bal = tInc - totalExp;
+            // Dynamic Panel Logic
+            let displayInc = 0;
+            let displayExp = 0;
+            let panelLabel = "Saldo Disponível";
+
+            if (activeTab === 'fixed') {
+                displayInc = tIncGlobal;
+                displayExp = tFix;
+                panelLabel = "Saldo Fixo";
+            } else if (activeTab === 'variable') {
+                displayInc = tIncExtra;
+                displayExp = tVar + tInv + tLaz + tCrd;
+                panelLabel = "Saldo Variável";
+            } else if (activeTab === 'goals') {
+                displayInc = 0;
+                displayExp = 0;
+                panelLabel = "Metas";
+                // Optionally sum up meta targets or current savings
+            } else {
+                // 'fluxo' or default
+                displayInc = tIncGlobal + tIncExtra;
+                displayExp = tFix + tInv + tLaz + tCrd + tVar;
+                panelLabel = "Saldo Disponível";
+            }
+
+            const bal = displayInc - displayExp;
 
             const mainBalEl = document.getElementById('main-balance');
             if (mainBalEl) {
                 mainBalEl.innerText = fmt(bal);
                 mainBalEl.style.color = bal < 0 ? '#ef4444' : '#1e293b';
             }
-            if (document.getElementById('total-inc')) document.getElementById('total-inc').innerText = fmt(tInc);
-            if (document.getElementById('total-exp')) document.getElementById('total-exp').innerText = fmt(totalExp);
+
+            const balLabelEl = document.querySelector('p.text-\\[10px\\].font-bold.text-slate-400.uppercase.tracking-wider.ml-1');
+            if (balLabelEl) balLabelEl.innerText = panelLabel;
+
+            if (document.getElementById('total-inc')) document.getElementById('total-inc').innerText = fmt(displayInc);
+            if (document.getElementById('total-exp')) document.getElementById('total-exp').innerText = fmt(displayExp);
+
+            // Dashboard specific UI updates
             if (document.getElementById('card-total-val')) document.getElementById('card-total-val').innerText = fmt(tCrd);
             if (document.getElementById('card-total-count')) document.getElementById('card-total-count').innerText = `${(state.cards || []).length} cartões`;
-            if (document.getElementById('total-var-ui')) document.getElementById('total-var-ui').innerText = fmt(tVar);
 
             const topG = catExpenses.sort((a, b) => b.val - a.val)[0];
             if (document.getElementById('top-expense-desc')) document.getElementById('top-expense-desc').innerText = topG ? topG.desc : '---';
