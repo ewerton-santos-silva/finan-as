@@ -377,6 +377,52 @@
                 </button>
             </div>
             <div id="container-goals" class="space-y-6"></div>
+
+            <!-- Sugestões de Investimento -->
+            <div class="mt-12 mb-8 animate-fade-in" style="animation-delay: 0.3s">
+                <h3
+                    class="font-black text-[11px] text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-green-500"></i> Planos de Investimento
+                </h3>
+                <div class="grid gap-4">
+                    <div class="glass-card p-4 border-l-4 border-green-500 flex items-center gap-4">
+                        <div class="p-3 bg-green-50 rounded-2xl">
+                            <i data-lucide="shield-check" class="w-6 h-6 text-green-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-black text-slate-800">CDB 100% CDI</h4>
+                            <p class="text-[10px] font-bold text-slate-400 lowercase">Segurança e Liquidez Diária</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-black text-green-600">Baixo Risco</span>
+                        </div>
+                    </div>
+                    <div class="glass-card p-4 border-l-4 border-indigo-500 flex items-center gap-4">
+                        <div class="p-3 bg-indigo-50 rounded-2xl">
+                            <i data-lucide="landmark" class="w-6 h-6 text-indigo-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-black text-slate-800">Tesouro SELIC</h4>
+                            <p class="text-[10px] font-bold text-slate-400 lowercase">O mais seguro do Brasil</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-black text-indigo-600">Baixo Risco</span>
+                        </div>
+                    </div>
+                    <div class="glass-card p-4 border-l-4 border-amber-500 flex items-center gap-4">
+                        <div class="p-3 bg-amber-50 rounded-2xl">
+                            <i data-lucide="percent" class="w-6 h-6 text-amber-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-black text-slate-800">LCI / LCA</h4>
+                            <p class="text-[10px] font-bold text-slate-400 lowercase">Isento de Imposto de Renda</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-black text-amber-600">Mín. 90 dias</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -768,6 +814,8 @@
             let displayInc = 0;
             let displayExp = 0;
             let panelLabel = "Saldo Disponível";
+            let incomeLabel = "Receitas";
+            let expenseLabel = "Despesas";
 
             if (activeTab === 'fixed') {
                 displayInc = tIncGlobal;
@@ -778,10 +826,28 @@
                 displayExp = tVar + tInv + tLaz + tCrd;
                 panelLabel = "Saldo Variável";
             } else if (activeTab === 'goals') {
-                displayInc = 0;
-                displayExp = 0;
-                panelLabel = "Metas";
-                // Optionally sum up meta targets or current savings
+                let totalTarget = 0;
+                let totalCurrent = 0;
+                let totalMonthlyNeed = 0;
+                (db.metas || []).forEach(goal => {
+                    totalTarget += goal.target;
+                    totalCurrent += goal.current;
+                    const months = diffMonths(goal.deadline);
+                    const remaining = goal.target - goal.current;
+                    totalMonthlyNeed += (months > 0 ? remaining / months : Math.max(0, remaining));
+                });
+                displayInc = totalTarget;
+                displayExp = totalMonthlyNeed;
+                panelLabel = "Total Guardado";
+                incomeLabel = "Meta Total";
+                expenseLabel = "Guardar p/ Mês";
+
+                // Show total current as the balance
+                const mainBalEl = document.getElementById('main-balance');
+                if (mainBalEl) {
+                    mainBalEl.innerText = fmt(totalCurrent);
+                    mainBalEl.style.color = '#1e293b';
+                }
             } else {
                 // 'fluxo' or default
                 displayInc = tIncGlobal + tIncExtra;
@@ -791,14 +857,22 @@
 
             const bal = displayInc - displayExp;
 
-            const mainBalEl = document.getElementById('main-balance');
-            if (mainBalEl) {
-                mainBalEl.innerText = fmt(bal);
-                mainBalEl.style.color = bal < 0 ? '#ef4444' : '#1e293b';
+            if (activeTab !== 'goals') {
+                const mainBalEl = document.getElementById('main-balance');
+                if (mainBalEl) {
+                    mainBalEl.innerText = fmt(bal);
+                    mainBalEl.style.color = bal < 0 ? '#ef4444' : '#1e293b';
+                }
             }
 
             const balLabelEl = document.querySelector('p.text-\\[10px\\].font-bold.text-slate-400.uppercase.tracking-wider.ml-1');
             if (balLabelEl) balLabelEl.innerText = panelLabel;
+
+            const incLabelEl = document.querySelector('p.text-\\[10px\\].text-slate-400.font-bold.uppercase.tracking-wider.flex.items-center.gap-1\\.5');
+            if (incLabelEl) incLabelEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> ${incomeLabel}`;
+
+            const expLabelEl = document.querySelector('p.text-\\[10px\\].text-slate-400.font-bold.uppercase.tracking-wider.flex.items-center.justify-end.gap-1\\.5');
+            if (expLabelEl) expLabelEl.innerHTML = `${expenseLabel} <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>`;
 
             if (document.getElementById('total-inc')) document.getElementById('total-inc').innerText = fmt(displayInc);
             if (document.getElementById('total-exp')) document.getElementById('total-exp').innerText = fmt(displayExp);
